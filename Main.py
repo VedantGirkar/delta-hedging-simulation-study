@@ -1,5 +1,6 @@
 from pprint import pprint
 
+from analysis.estimators import cross_sectional_std, summarize_terminal_costs
 from Config import (
     DAILY_STEPS,
     DEFAULT_RANDOM_SEED,
@@ -16,7 +17,7 @@ from Config import (
 from core.bsm import call_delta, call_price, d1, d2
 from core.gbm import simulate_multiple_gbm_paths, simulate_single_gbm_path, summarize_terminal_prices
 from core.grids import build_time_grid, build_time_to_maturity_grid, step_size
-from core.hedge_engine import compact_hedge_table, run_single_path_delta_hedge
+from core.hedge_engine import compact_hedge_table, run_multiple_path_delta_hedge, run_single_path_delta_hedge
 from core.payoff import european_call_payoff, is_in_the_money
 
 
@@ -162,6 +163,50 @@ def build_stage3_summary() -> dict:
 
 
 
+def build_stage4_summary() -> dict:
+    weekly_paths = simulate_multiple_gbm_paths(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=WEEKLY_STEPS,
+        n_paths=10,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+    daily_paths = simulate_multiple_gbm_paths(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=DAILY_STEPS,
+        n_paths=10,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+
+    weekly_multi = run_multiple_path_delta_hedge(weekly_paths, WEEKLY_STEPS)
+    daily_multi = run_multiple_path_delta_hedge(daily_paths, DAILY_STEPS)
+
+    weekly_std_xt = cross_sectional_std(weekly_multi["cumulative_cost_paths"])
+    daily_std_xt = cross_sectional_std(daily_multi["cumulative_cost_paths"])
+
+    return {
+        "stage": 4,
+        "weekly_multi_path_summary": summarize_terminal_costs(
+            weekly_multi["terminal_costs"], weekly_multi["itm_flags"]
+        ),
+        "daily_multi_path_summary": summarize_terminal_costs(
+            daily_multi["terminal_costs"], daily_multi["itm_flags"]
+        ),
+        "weekly_std_X_t_first_five": weekly_std_xt[:5],
+        "weekly_std_X_t_last_five": weekly_std_xt[-5:],
+        "daily_std_X_t_first_five": daily_std_xt[:5],
+        "daily_std_X_t_last_five": daily_std_xt[-5:],
+        "weekly_first_two_terminal_X_T": weekly_multi["terminal_costs"][:2],
+        "daily_first_two_terminal_X_T": daily_multi["terminal_costs"][:2],
+    }
+
+
+
 def main(stage: int = 1) -> None:
     if stage == 1:
         print("STAGE 1 CHECK")
@@ -184,8 +229,13 @@ def main(stage: int = 1) -> None:
         pprint(build_stage3_summary())
         return
 
-    raise ValueError("Only stage 1, stage 2, and stage 3 are currently implemented")
+    if stage == 4:
+        print("STAGE 4 CHECK")
+        pprint(build_stage4_summary())
+        return
+
+    raise ValueError("Only stage 1, stage 2, stage 3, and stage 4 are currently implemented")
 
 
 if __name__ == "__main__":
-    main(stage=3)
+    main(stage=4)

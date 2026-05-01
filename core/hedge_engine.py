@@ -19,6 +19,7 @@ def run_single_path_delta_hedge(stock_prices: List[float], n_steps: int) -> Dict
     rows = []
     cumulative_cost = 0.0
     previous_shares_held = 0.0
+    cumulative_cost_path = []
 
     for i in range(n_steps + 1):
         current_stock_price = stock_prices[i]
@@ -41,6 +42,7 @@ def run_single_path_delta_hedge(stock_prices: List[float], n_steps: int) -> Dict
             stock_price=current_stock_price,
         )
         cumulative_cost = trade_summary["balance_after_trade"]
+        cumulative_cost_path.append(cumulative_cost)
 
         rows.append(
             {
@@ -76,7 +78,32 @@ def run_single_path_delta_hedge(stock_prices: List[float], n_steps: int) -> Dict
         "n_steps": n_steps,
         "dt": dt,
         "rows": rows,
+        "cumulative_cost_path": cumulative_cost_path,
         "settlement": settlement,
+    }
+
+
+
+def run_multiple_path_delta_hedge(stock_paths: List[List[float]], n_steps: int) -> Dict[str, object]:
+    all_results = []
+    terminal_costs = []
+    itm_flags = []
+    cumulative_cost_paths = []
+
+    for path in stock_paths:
+        single_result = run_single_path_delta_hedge(stock_prices=path, n_steps=n_steps)
+        all_results.append(single_result)
+        terminal_costs.append(single_result["settlement"]["terminal_X_T"])
+        itm_flags.append(single_result["settlement"]["itm_indicator"])
+        cumulative_cost_paths.append(single_result["cumulative_cost_path"])
+
+    return {
+        "n_paths": len(stock_paths),
+        "n_steps": n_steps,
+        "all_results": all_results,
+        "terminal_costs": terminal_costs,
+        "itm_flags": itm_flags,
+        "cumulative_cost_paths": cumulative_cost_paths,
     }
 
 

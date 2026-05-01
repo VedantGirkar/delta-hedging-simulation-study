@@ -1,0 +1,1 @@
+Simulation Study of Weekly vs Daily Delta Hedging

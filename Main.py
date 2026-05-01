@@ -30,6 +30,7 @@ from outputs.charts import (
     save_terminal_histogram,
 )
 from outputs.tables import write_dict_rows_to_csv
+from outputs.dashboard_app import generate_dashboard
 
 
 
@@ -276,6 +277,20 @@ def build_stage6_summary() -> dict:
 
 
 
+
+def build_stage7_summary() -> dict:
+    stage6 = build_stage6_summary()
+    dashboard_dir = RESULTS_DIR / "dashboard"
+    dashboard_file = dashboard_dir / "delta_hedging_dashboard.html"
+    generated_path = generate_dashboard(RESULTS_DIR, dashboard_file)
+    return {
+        "stage": 7,
+        "dashboard_file": str(generated_path),
+        "source_comparison_table": stage6["comparison_table_file"],
+        "source_std_xt_table": stage6["std_xt_table_file"],
+        "figure_count": len(stage6["generated_figures"]),
+    }
+
 def main(stage: int = 1) -> None:
     if stage == 1:
         print("STAGE 1 CHECK")
@@ -301,8 +316,12 @@ def main(stage: int = 1) -> None:
         print("STAGE 6 CHECK")
         pprint(build_stage6_summary())
         return
-    raise ValueError("Only stage 1 through stage 6 are currently implemented")
+    if stage == 7:
+        print("STAGE 7 CHECK")
+        pprint(build_stage7_summary())
+        return
+    raise ValueError("Only stage 1 through stage 7 are currently implemented")
 
 
 if __name__ == "__main__":
-    main(stage=6)
+    main(stage=7)

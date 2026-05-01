@@ -1,0 +1,31 @@
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+RESULTS_DIR = BASE_DIR / "results"
+LOGS_DIR = BASE_DIR / "logs"
+
+for _dir in (RESULTS_DIR, LOGS_DIR):
+    _dir.mkdir(parents=True, exist_ok=True)
+
+PROJECT_NAME = "Simulation Study of Periodical Delta Hedging"
+
+S0 = 49.0
+K = 50.0
+T = 20 / 52
+R = 0.05
+SIGMA = 0.20
+MU = 0.13
+N_SHARES = 100_000
+
+WEEKS_TO_MATURITY = 20
+TRADING_DAYS_PER_WEEK = 5
+TRADING_DAYS_PER_YEAR = 252
+WEEKS_PER_YEAR = 52
+DAILY_STEPS = WEEKS_TO_MATURITY * TRADING_DAYS_PER_WEEK
+WEEKLY_STEPS = WEEKS_TO_MATURITY
+
+CONFIDENCE_LEVEL = 0.95
+RELATIVE_ERROR_TOLERANCE = 0.02
+DEFAULT_RANDOM_SEED = 42
+
+FLOAT_TOL = 1e-12

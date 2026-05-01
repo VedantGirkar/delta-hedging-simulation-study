@@ -1,7 +1,20 @@
 from pprint import pprint
 
-from Config import DAILY_STEPS, K, N_SHARES, PROJECT_NAME, R, S0, SIGMA, T, WEEKLY_STEPS
+from Config import (
+    DAILY_STEPS,
+    DEFAULT_RANDOM_SEED,
+    K,
+    MU,
+    N_SHARES,
+    PROJECT_NAME,
+    R,
+    S0,
+    SIGMA,
+    T,
+    WEEKLY_STEPS,
+)
 from core.bsm import call_delta, call_price, d1, d2
+from core.gbm import simulate_multiple_gbm_paths, simulate_single_gbm_path, summarize_terminal_prices
 from core.grids import build_time_grid, build_time_to_maturity_grid, step_size
 from core.payoff import european_call_payoff, is_in_the_money
 
@@ -53,11 +66,87 @@ def build_stage1_summary() -> dict:
 
 
 
-def main() -> None:
-    summary = build_stage1_summary()
-    print("STAGE 1 CHECK")
-    pprint(summary)
+def build_stage2_summary() -> dict:
+    weekly_single = simulate_single_gbm_path(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=WEEKLY_STEPS,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+    daily_single = simulate_single_gbm_path(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=DAILY_STEPS,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+
+    weekly_many = simulate_multiple_gbm_paths(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=WEEKLY_STEPS,
+        n_paths=5,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+    daily_many = simulate_multiple_gbm_paths(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=DAILY_STEPS,
+        n_paths=5,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+
+    summary = {
+        "stage": 2,
+        "gbm_model": {
+            "S0": S0,
+            "mu": MU,
+            "sigma": SIGMA,
+            "T": T,
+        },
+        "weekly_single_path": {
+            "n_steps": WEEKLY_STEPS,
+            "first_five_prices": weekly_single["prices"][:5],
+            "last_five_prices": weekly_single["prices"][-5:],
+            "first_five_shocks": weekly_single["shocks"][:5],
+            "terminal_price": weekly_single["prices"][-1],
+        },
+        "daily_single_path": {
+            "n_steps": DAILY_STEPS,
+            "first_five_prices": daily_single["prices"][:5],
+            "last_five_prices": daily_single["prices"][-5:],
+            "first_five_shocks": daily_single["shocks"][:5],
+            "terminal_price": daily_single["prices"][-1],
+        },
+        "weekly_path_summary_5_paths": summarize_terminal_prices(weekly_many),
+        "daily_path_summary_5_paths": summarize_terminal_prices(daily_many),
+    }
+    return summary
+
+
+
+def main(stage: int = 1) -> None:
+    if stage == 1:
+        print("STAGE 1 CHECK")
+        pprint(build_stage1_summary())
+        return
+
+    if stage == 2:
+        print("STAGE 1 FOUNDATION")
+        pprint(build_stage1_summary())
+        print("\nSTAGE 2 CHECK")
+        pprint(build_stage2_summary())
+        return
+
+    raise ValueError("Only stage 1 and stage 2 are currently implemented")
 
 
 if __name__ == "__main__":
-    main()
+    main(stage=2)

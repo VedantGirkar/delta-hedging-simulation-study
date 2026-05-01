@@ -9,4 +9,4 @@ from Main import main
 
 
 if __name__ == "__main__":
-    main(stage=1)
+    main(stage=2)

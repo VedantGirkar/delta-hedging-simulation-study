@@ -1,6 +1,8 @@
 from pprint import pprint
 
+from analysis.confidence_intervals import interval_covers_value, mean_confidence_interval, proportion_confidence_interval
 from analysis.estimators import cross_sectional_std, summarize_terminal_costs
+from analysis.precision_control import run_precision_controlled_study
 from Config import (
     DAILY_STEPS,
     DEFAULT_RANDOM_SEED,
@@ -207,6 +209,51 @@ def build_stage4_summary() -> dict:
 
 
 
+def build_stage5_summary() -> dict:
+    benchmark_total_price = call_price(S=S0, K=K, r=R, sigma=SIGMA, tau=T) * N_SHARES
+
+    weekly_study = run_precision_controlled_study(
+        n_steps=WEEKLY_STEPS,
+        benchmark_price_total=benchmark_total_price,
+        initial_n_paths=25,
+        batch_size=25,
+        max_n_paths=200,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+    daily_study = run_precision_controlled_study(
+        n_steps=DAILY_STEPS,
+        benchmark_price_total=benchmark_total_price,
+        initial_n_paths=25,
+        batch_size=25,
+        max_n_paths=200,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+
+    return {
+        "stage": 5,
+        "benchmark_total_bsm_price": benchmark_total_price,
+        "weekly_precision_study": {
+            "n_paths": weekly_study["n_paths"],
+            "summary": weekly_study["summary"],
+            "mean_ci": weekly_study["mean_ci"],
+            "prob_ci": weekly_study["prob_ci"],
+            "covers_bsm_price": weekly_study["covers_bsm_price"],
+            "target_met": weekly_study["target_met"],
+            "std_X_t_first_five": weekly_study["std_X_t"][:5],
+        },
+        "daily_precision_study": {
+            "n_paths": daily_study["n_paths"],
+            "summary": daily_study["summary"],
+            "mean_ci": daily_study["mean_ci"],
+            "prob_ci": daily_study["prob_ci"],
+            "covers_bsm_price": daily_study["covers_bsm_price"],
+            "target_met": daily_study["target_met"],
+            "std_X_t_first_five": daily_study["std_X_t"][:5],
+        },
+    }
+
+
+
 def main(stage: int = 1) -> None:
     if stage == 1:
         print("STAGE 1 CHECK")
@@ -234,8 +281,13 @@ def main(stage: int = 1) -> None:
         pprint(build_stage4_summary())
         return
 
-    raise ValueError("Only stage 1, stage 2, stage 3, and stage 4 are currently implemented")
+    if stage == 5:
+        print("STAGE 5 CHECK")
+        pprint(build_stage5_summary())
+        return
+
+    raise ValueError("Only stage 1 through stage 5 are currently implemented")
 
 
 if __name__ == "__main__":
-    main(stage=4)
+    main(stage=5)

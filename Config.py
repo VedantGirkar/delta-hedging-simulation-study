@@ -8,6 +8,7 @@ for _dir in (RESULTS_DIR, LOGS_DIR):
     _dir.mkdir(parents=True, exist_ok=True)
 
 PROJECT_NAME = "Simulation Study of Periodical Delta Hedging"
+RESULTS_DIR = BASE_DIR / "results"
 
 S0 = 49.0
 K = 50.0

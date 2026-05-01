@@ -41,6 +41,8 @@ def run_precision_controlled_study(
             "n_steps": n_steps,
             "n_paths": n_paths,
             "summary": summary,
+            "terminal_costs": hedge_result["terminal_costs"],
+            "itm_flags": hedge_result["itm_flags"],
             "mean_ci": mean_ci,
             "prob_ci": prob_ci,
             "std_X_t": std_xt,

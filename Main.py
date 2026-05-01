@@ -16,6 +16,7 @@ from Config import (
 from core.bsm import call_delta, call_price, d1, d2
 from core.gbm import simulate_multiple_gbm_paths, simulate_single_gbm_path, summarize_terminal_prices
 from core.grids import build_time_grid, build_time_to_maturity_grid, step_size
+from core.hedge_engine import compact_hedge_table, run_single_path_delta_hedge
 from core.payoff import european_call_payoff, is_in_the_money
 
 
@@ -132,6 +133,35 @@ def build_stage2_summary() -> dict:
 
 
 
+def build_stage3_summary() -> dict:
+    weekly_single = simulate_single_gbm_path(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=WEEKLY_STEPS,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+    daily_single = simulate_single_gbm_path(
+        S0=S0,
+        mu=MU,
+        sigma=SIGMA,
+        maturity=T,
+        n_steps=DAILY_STEPS,
+        seed=DEFAULT_RANDOM_SEED,
+    )
+
+    weekly_hedge = run_single_path_delta_hedge(weekly_single["prices"], WEEKLY_STEPS)
+    daily_hedge = run_single_path_delta_hedge(daily_single["prices"], DAILY_STEPS)
+
+    return {
+        "stage": 3,
+        "weekly_single_path_hedge": compact_hedge_table(weekly_hedge),
+        "daily_single_path_hedge": compact_hedge_table(daily_hedge),
+    }
+
+
+
 def main(stage: int = 1) -> None:
     if stage == 1:
         print("STAGE 1 CHECK")
@@ -145,8 +175,17 @@ def main(stage: int = 1) -> None:
         pprint(build_stage2_summary())
         return
 
-    raise ValueError("Only stage 1 and stage 2 are currently implemented")
+    if stage == 3:
+        print("STAGE 1 FOUNDATION")
+        pprint(build_stage1_summary())
+        print("\nSTAGE 2 FOUNDATION")
+        pprint(build_stage2_summary())
+        print("\nSTAGE 3 CHECK")
+        pprint(build_stage3_summary())
+        return
+
+    raise ValueError("Only stage 1, stage 2, and stage 3 are currently implemented")
 
 
 if __name__ == "__main__":
-    main(stage=2)
+    main(stage=3)
